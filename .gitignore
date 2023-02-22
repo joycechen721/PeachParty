@@ -1,4 +1,4 @@
-
+/DerivedData
 *.modulevalidation
 *.yaml
 *.plist
@@ -552,3 +552,5 @@ DerivedData/PeachParty/Logs/Run/C827D596-ECD6-4441-8F51-FCF91643D072.xcactivityl
 DerivedData/PeachParty/OpenQuickly-ReferencedFrameworks.index-v1
 DerivedData/PeachParty/TextIndex/TextFragmentIndex-v8.idx
 PeachParty.xcodeproj/project.xcworkspace/xcuserdata/joycechen.xcuserdatad/UserInterfaceState.xcuserstate
+*.timestamp
+PeachParty.xcodeproj/xcuserdata/joycechen.xcuserdatad/xcdebugger/Breakpoints_v2.xcbkptlist
