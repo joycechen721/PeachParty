@@ -72,7 +72,7 @@ class Boo: public Monster {
 //SQUARE CLASS
 class Square: public Actor {
     public:
-        Square(StudentWorld* world, int imageID, double startX, double startY, int depth);
+        Square(StudentWorld* world, int imageID, double startX, double startY);
         virtual void doSomething() = 0;
         virtual void landAvatar(Avatar* avatar) = 0;
         bool isActive();
@@ -95,7 +95,7 @@ class CoinSquare: public Square {
         bool m_give;
 };
 
-class StarSquare: public CoinSquare {
+class StarSquare: public Square {
     public:
         StarSquare(StudentWorld* world, int imageID, double startX, double startY);
         void doSomething();

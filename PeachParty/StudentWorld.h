@@ -21,7 +21,7 @@ class StudentWorld : public GameWorld
         Avatar* getPeach();
         Avatar* getYoshi();
         int getBankAmt();
-        void setBankAmt(int amt);
+        void addToBank(int amt);
 
     private:
         Board m_bd;

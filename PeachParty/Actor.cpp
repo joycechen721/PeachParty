@@ -20,7 +20,7 @@ void Actor::setAlive(bool isAlive){
 
 //======== AVATAR CLASS (PARENT: ACTOR CLASS) ========
 Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
-    std::cout << "START: " << startX << " END: " << startY << std::endl;
+//    std::cout << "START: " << startX << " END: " << startY << std::endl;
     m_id = playerID;
     m_dieRoll = 0;
     m_dir = right;
@@ -130,9 +130,11 @@ void Avatar::doSomething(){
 //}
 void Avatar::addCoins(int coins){
     m_coins += coins;
+    if(m_coins < 0) m_coins = 0;
 }
 void Avatar::addStars(int stars){
     m_stars += stars;
+    if(m_stars < 0) m_stars = 0;
 }
 int Avatar::getCoins(){
     return m_coins;
@@ -169,7 +171,7 @@ Boo::Boo(StudentWorld* world, int imageID, double startX, double startY) : Monst
 
 
 //======== SQUARE CLASS (PARENT: ACTOR CLASS) ========
-Square::Square(StudentWorld* world, int imageID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
+Square::Square(StudentWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY, 1){
     m_active = true;
     m_yoshi = world->getYoshi();
     m_peach = world->getPeach();
@@ -187,8 +189,8 @@ bool Square::avatarLanded(Avatar* avatar){
     return avatar->getX() == getX() && avatar->getY() == getY() && !avatar->isWalking() && avatar->isNew();
 }
 
-//======== COINSQUARE CLASS (PARENT: SQUARE CLASS) ========
-CoinSquare::CoinSquare(StudentWorld* world, int imageID, double startX, double startY, bool isBlue) : Square(world, imageID, startX, startY, 1){
+//======== COIN_SQUARE CLASS (PARENT: SQUARE CLASS) ========
+CoinSquare::CoinSquare(StudentWorld* world, int imageID, double startX, double startY, bool isBlue) : Square(world, imageID, startX, startY){
     m_give = isBlue;
 }
 void CoinSquare::doSomething(){
@@ -212,8 +214,8 @@ void CoinSquare::landAvatar(Avatar* avatar){
     }
 }
 
-//======== STARSQUARE CLASS (PARENT: COINSQUARE CLASS) ========
-StarSquare::StarSquare(StudentWorld* world, int imageID, double startX, double startY) : CoinSquare(world, imageID, startX, startY, false){
+//======== STAR_SQUARE CLASS (PARENT: SQUARE CLASS) ========
+StarSquare::StarSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY){
     
 }
 void StarSquare::doSomething(){
@@ -230,7 +232,8 @@ void StarSquare::landAvatar(Avatar* avatar){
     }
 }
 
-BankSquare::BankSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY, 1){
+//======== BANK_SQUARE CLASS (PARENT: SQUARE CLASS) ========
+BankSquare::BankSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY){
     
 }
 void BankSquare::doSomething(){
@@ -240,21 +243,26 @@ void BankSquare::doSomething(){
     moveAvatar(getYoshi());
 }
 void BankSquare::landAvatar(Avatar *avatar){
-    int bankStash = getWorld()->getBankAmt();
-    avatar->addCoins(bankStash);
-    getWorld()->setBankAmt(0);
-    getWorld()->playSound(SOUND_WITHDRAW_BANK);
+    if(avatarLanded(avatar)){
+        int bankStash = getWorld()->getBankAmt();
+        avatar->addCoins(bankStash);
+        getWorld()->addToBank(bankStash * -1);
+        getWorld()->playSound(SOUND_WITHDRAW_BANK);
+    }
 }
 void BankSquare::moveAvatar(Avatar *avatar){
     if(avatar->getX() == getX() && avatar->getY() == getY() && avatar->isWalking()){
-        int deduction = avatar->getCoins() < 5 ? avatar->getCoins() : 5;
+        int deduction = (avatar->getCoins()) < 5 ? avatar->getCoins() : 5;
         avatar->addCoins(deduction * -1);
-        getWorld()->setBankAmt(getWorld()->getBankAmt() + deduction);
+        std::cout << "DEDUCTED: " << deduction << std::endl;
+        getWorld()->addToBank(deduction);
         getWorld()->playSound(SOUND_DEPOSIT_BANK);
+//        avatar->setNew(false);
     };
 }
 
-DirectionalSquare::DirectionalSquare(StudentWorld* world, int imageID, double startX, double startY, int dir) : Square(world, imageID, startX, startY, 1){
+//======== DIRECTIONAL_SQUARE CLASS (PARENT: SQUARE CLASS) ========
+DirectionalSquare::DirectionalSquare(StudentWorld* world, int imageID, double startX, double startY, int dir) : Square(world, imageID, startX, startY){
     switch(dir){
         case 0:
             setDirection(up);
@@ -277,7 +285,8 @@ void DirectionalSquare::landAvatar(Avatar *avatar){
     
 }
 
-EventSquare::EventSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY, 1){
+//======== EVENT_SQUARE CLASS (PARENT: SQUARE CLASS) ========
+EventSquare::EventSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY){
     
 }
 void EventSquare::doSomething(){
@@ -287,12 +296,25 @@ void EventSquare::landAvatar(Avatar *avatar){
     
 }
 
-DroppingSquare::DroppingSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY, 1){
+//======== DROPPING_SQUARE CLASS (PARENT: SQUARE CLASS) ========
+DroppingSquare::DroppingSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY){
     
 }
 void DroppingSquare::doSomething(){
-    
+    landAvatar(getPeach());
+    landAvatar(getYoshi());
 }
 void DroppingSquare::landAvatar(Avatar *avatar){
-    
+    if(avatarLanded(avatar)){
+        int option = randInt(1,2);
+        switch(option){
+            case 1:
+                avatar->addCoins(-10);
+                break;
+            case 2:
+                avatar->addStars(-1);
+                break;
+        }
+        getWorld()->playSound(SOUND_DROPPING_SQUARE_ACTIVATE);
+    }
 }

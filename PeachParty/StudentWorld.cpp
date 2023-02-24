@@ -20,7 +20,6 @@ int StudentWorld::init()
 {
     startCountdownTimer(100);
     m_bank = 0;
-    
     ostringstream oss;
     oss << getBoardNumber();
     string board_file = assetPath() + "board0" + oss.str() + ".txt";
@@ -173,6 +172,6 @@ int StudentWorld::getBankAmt(){
     return m_bank;
 }
 
-void StudentWorld::setBankAmt(int amt){
+void StudentWorld::addToBank(int amt){
     m_bank += amt;
 }
