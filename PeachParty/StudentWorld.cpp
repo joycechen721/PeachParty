@@ -37,7 +37,7 @@ int StudentWorld::init()
                 case Board::player:
                     m_yoshi = new Avatar(this, IID_YOSHI, 2, sprite_col, sprite_row, 0);
                     m_peach = new Avatar(this, IID_PEACH, 1, sprite_col, sprite_row, 0);
-                    m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row));
+                    m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
                     break;
                 case Board::boo:
                     m_actors.push_back(new Boo(this, IID_BOO, sprite_col, sprite_row));
@@ -46,22 +46,22 @@ int StudentWorld::init()
                     m_actors.push_back(new Bowser(this, IID_BOWSER, sprite_col, sprite_row));
                     break;
                 case Board::blue_coin_square:
-                    m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row));
+                    m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
                     break;
                 case Board::red_coin_square:
-                    m_actors.push_back(new CoinSquare(this, IID_RED_COIN_SQUARE, sprite_col, sprite_row));
+                    m_actors.push_back(new CoinSquare(this, IID_RED_COIN_SQUARE, sprite_col, sprite_row, false));
                     break;
                 case Board::up_dir_square:
-                    m_actors.push_back(new DirectionalSquare(this, IID_DIR_SQUARE, sprite_col, sprite_row, 0));
+                    m_actors.push_back(new DirectionalSquare(this, IID_DIR_SQUARE, sprite_col, sprite_row, Actor::up));
                     break;
                 case Board::down_dir_square:
-                    m_actors.push_back(new DirectionalSquare(this, IID_DIR_SQUARE, sprite_col, sprite_row, 1));
+                    m_actors.push_back(new DirectionalSquare(this, IID_DIR_SQUARE, sprite_col, sprite_row, Actor::down));
                     break;
                 case Board::left_dir_square:
-                    m_actors.push_back(new DirectionalSquare(this, IID_DIR_SQUARE, sprite_col, sprite_row, 2));
+                    m_actors.push_back(new DirectionalSquare(this, IID_DIR_SQUARE, sprite_col, sprite_row, Actor::left));
                     break;
                 case Board::right_dir_square:
-                    m_actors.push_back(new DirectionalSquare(this, IID_DIR_SQUARE, sprite_col, sprite_row, 3));
+                    m_actors.push_back(new DirectionalSquare(this, IID_DIR_SQUARE, sprite_col, sprite_row, Actor::right));
                     break;
                 case Board::star_square:
                     m_actors.push_back(new StarSquare(this, IID_STAR_SQUARE, sprite_col, sprite_row));
@@ -85,31 +85,37 @@ int StudentWorld::move()
     
     m_yoshi->doSomething();
     m_peach->doSomething();
-//    vector<Actor*>::iterator it = m_actors.begin();
-//    while(it != m_actors.end()){
-//        if((*it)->isAlive()){
-//            (*it)->doSomething();
-//        }
-//    }
+    
+    vector<Actor*>::iterator it = m_actors.begin();
+    while(it != m_actors.end()){
+        if((*it)->isAlive()){
+            (*it)->doSomething();
+            it++;
+        }
+        else{
+            delete *it;
+            it = m_actors.erase(it);
+        }
+    }
     
 //   P1 Roll: 3 Stars: 2 $$: 15 | Time: 75 | Bank: 9 | P2 Roll: 0 Stars: 1 $$: 22 VOR
     ostringstream time;
     time << timeRemaining();
     ostringstream p1Roll;
-    p1Roll << m_yoshi->getRolls();
+    p1Roll << m_peach->getRolls();
     ostringstream p2Roll;
-    p2Roll << m_peach->getRolls();
+    p2Roll << m_yoshi->getRolls();
     ostringstream p1Stars;
-    p1Stars << m_yoshi->getStars();
+    p1Stars << m_peach->getStars();
     ostringstream p2Stars;
-    p2Stars << m_peach->getStars();
+    p2Stars << m_yoshi->getStars();
     ostringstream p1Coins;
-    p1Coins << m_yoshi->getCoins();
+    p1Coins << m_peach->getCoins();
     ostringstream p2Coins;
-    p2Coins << m_peach->getCoins();
+    p2Coins << m_yoshi->getCoins();
     ostringstream bank;
     bank << m_bank;
-    setGameStatText("P1 Roll: " + p1Roll.str() + " Stars: " + p1Stars.str() + " $$: " + p1Coins.str() + " | " + "Time: " + time.str() + " | Bank: " + bank.str() + " | P2 Roll: " + p2Roll.str() + " Stars: " + p2Stars.str() + " $$: " + p1Coins.str());
+    setGameStatText("P1 Roll: " + p1Roll.str() + " Stars: " + p1Stars.str() + " $$: " + p1Coins.str() + " | " + "Time: " + time.str() + " | Bank: " + bank.str() + " | P2 Roll: " + p2Roll.str() + " Stars: " + p2Stars.str() + " $$: " + p2Coins.str());
     
     if (timeRemaining() <= 0){
         playSound(SOUND_GAME_FINISHED);
@@ -117,9 +123,18 @@ int StudentWorld::move()
             setFinalScore(m_yoshi->getStars(), m_yoshi->getCoins());
             return GWSTATUS_YOSHI_WON;
         }
-        else{
+        else if(m_yoshi->getCoins() + m_yoshi->getStars() < m_peach->getCoins() + m_yoshi->getStars()){
             setFinalScore(m_peach->getStars(), m_peach->getCoins());
             return GWSTATUS_PEACH_WON;
+        }
+        else{
+            int winner = randInt(1,2);
+            if(winner == 1){
+                setFinalScore(m_peach->getStars(), m_peach->getCoins());
+                return GWSTATUS_PEACH_WON;
+            }
+            setFinalScore(m_yoshi->getStars(), m_yoshi->getCoins());
+            return GWSTATUS_YOSHI_WON;
         }
     }
 	return GWSTATUS_CONTINUE_GAME;
@@ -144,4 +159,20 @@ StudentWorld::~StudentWorld(){
 
 Board StudentWorld::getBoard(){
     return m_bd;
+}
+
+Avatar* StudentWorld::getPeach(){
+    return m_peach;
+}
+
+Avatar* StudentWorld::getYoshi(){
+    return m_yoshi;
+}
+
+int StudentWorld::getBankAmt(){
+    return m_bank;
+}
+
+void StudentWorld::setBankAmt(int amt){
+    m_bank += amt;
 }

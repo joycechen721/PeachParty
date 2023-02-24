@@ -11,6 +11,7 @@ class Actor: public GraphObject {
         Actor(StudentWorld* world, int imageID, double startX, double startY, int depth);
         StudentWorld* getWorld();
         bool isAlive();
+        void setAlive(bool isAlive);
         virtual void doSomething() = 0;
     private:
         StudentWorld* m_world;
@@ -28,11 +29,15 @@ class Avatar: public Actor {
         void findNewDir();
         bool canMoveForward(int dir);
         void moveForward(int dir);
-        void doSomething();
+        virtual void doSomething();
         void addCoins(int coins);
+        void addStars(int stars);
         int getCoins();
         int getRolls();
         int getStars();
+        bool isWalking();
+        bool isNew();
+        void setNew(bool status);
     private:
         int m_id;
         int m_dir;
@@ -42,13 +47,14 @@ class Avatar: public Actor {
         Vortex* m_vortex;
         int m_dieRoll;
         int m_ticksToMove;
+        bool m_new;
 };
 
 //Monster class for Bowser and Boo
 class Monster: public Actor{
     public:
         Monster(StudentWorld* world, int imageID, double startX, double startY, int depth);
-        void doSomething();
+        virtual void doSomething();
 };
 
 //Bowser
@@ -67,38 +73,62 @@ class Boo: public Monster {
 class Square: public Actor {
     public:
         Square(StudentWorld* world, int imageID, double startX, double startY, int depth);
-        void doSomething();
+        virtual void doSomething() = 0;
+        virtual void landAvatar(Avatar* avatar) = 0;
+        bool isActive();
+        Avatar* getYoshi();
+        Avatar* getPeach();
+        bool avatarLanded(Avatar* avatar);
+    private:
+        bool m_active;
+        Avatar* m_yoshi;
+        Avatar* m_peach;
 };
 
 //blue and red coin squares
 class CoinSquare: public Square {
     public:
-        CoinSquare(StudentWorld* world, int imageID, double startX, double startY);
+        CoinSquare(StudentWorld* world, int imageID, double startX, double startY, bool isBlue);
+        void doSomething();
+        void landAvatar(Avatar* avatar);
+    private:
+        bool m_give;
 };
 
-class StarSquare: public Square {
+class StarSquare: public CoinSquare {
     public:
         StarSquare(StudentWorld* world, int imageID, double startX, double startY);
+        void doSomething();
+        void landAvatar(Avatar* avatar);
 };
 
 class DirectionalSquare: public Square {
     public:
         DirectionalSquare(StudentWorld* world, int imageID, double startX, double startY, int dir);
+        void doSomething();
+        void landAvatar(Avatar* avatar);
 };
 
 class BankSquare: public Square {
     public:
         BankSquare(StudentWorld* world, int imageID, double startX, double startY);
+        void doSomething();
+        void landAvatar(Avatar* avatar);
+        void moveAvatar(Avatar* avatar);
 };
 
 class EventSquare: public Square {
     public:
         EventSquare(StudentWorld* world, int imageID, double startX, double startY);
+        void doSomething();
+        void landAvatar(Avatar* avatar);
 };
 
 class DroppingSquare: public Square {
     public:
         DroppingSquare(StudentWorld* world, int imageID, double startX, double startY);
+        void doSomething();
+        void landAvatar(Avatar* avatar);
 };
 
 #endif // ACTOR_H_

@@ -18,6 +18,10 @@ class StudentWorld : public GameWorld
         virtual void cleanUp();
         virtual ~StudentWorld();
         Board getBoard();
+        Avatar* getPeach();
+        Avatar* getYoshi();
+        int getBankAmt();
+        void setBankAmt(int amt);
 
     private:
         Board m_bd;
