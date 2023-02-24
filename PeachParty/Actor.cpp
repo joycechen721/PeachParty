@@ -3,27 +3,81 @@
 
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 
-Actor::Actor(GameWorld* world, int imageID, double startX, double startY) : GraphObject(imageID, startX, startY, right, 0, 1.0){
+//======== ACTOR CLASS (PARENT: GRAPHOBJECT CLASS) ========
+Actor::Actor(StudentWorld* world, int imageID, double startX, double startY, int depth) : GraphObject(imageID, startX, startY, right, depth, 1.0){
     m_world = world;
+    m_alive = true;
 }
-
-GameWorld* Actor::getWorld(){
+StudentWorld* Actor::getWorld(){
     return m_world;
 }
+bool Actor::isAlive(){
+    return m_alive;
+}
 
-Avatar::Avatar(GameWorld* world, int imageID, int playerID, double startX, double startY) : Actor(world, imageID, startX, startY){
+//======== AVATAR CLASS (PARENT: ACTOR CLASS) ========
+Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
     m_id = playerID;
+    m_dieRoll = 0;
+    m_dir = right;
     m_walking = false;
     m_coins = 0;
     m_stars = 0;
 }
-
+//up over down, right over left
+void Avatar::findNewDir(){
+    if(m_dir == left || m_dir == right){
+        if(canMoveForward(up)) m_dir = up;
+        else m_dir = down;
+        setDirection(right);
+    }
+    else{
+        if(canMoveForward(right)){
+            m_dir = right;
+            setDirection(right);
+        }
+        else {
+            m_dir = left;
+            setDirection(left);
+        }
+    }
+}
+bool Avatar::canMoveForward(int dir){
+    Board bd = getWorld()->getBoard();
+    switch(dir){
+        case right:
+            return bd.getContentsOf((getX() + 2)/SPRITE_WIDTH, getY()/SPRITE_HEIGHT) != Board::empty;
+            break;
+        case left:
+            return bd.getContentsOf((getX() - 2)/SPRITE_WIDTH, getY()/SPRITE_HEIGHT) != Board::empty;
+            break;
+        case up:
+            return bd.getContentsOf(getX()/SPRITE_WIDTH, (getY() - 2)/SPRITE_HEIGHT) != Board::empty;
+            break;
+        default:
+            return bd.getContentsOf(getX()/SPRITE_WIDTH, (getY() + 2)/SPRITE_HEIGHT) != Board::empty;
+    }
+}
+void Avatar::moveForward(int dir){
+    switch(dir){
+        case right:
+            moveTo(getX() + 2, getY());
+            break;
+        case left:
+            moveTo(getX() - 2, getY());
+            break;
+        case up:
+            moveTo(getX(), getY() - 2);
+            break;
+        default:
+            moveTo(getX(), getY() + 2);
+    }
+}
 void Avatar::doSomething(){
     if(!m_walking){
         int action = getWorld()->getAction(m_id);
         if(action == ACTION_ROLL){
             m_dieRoll = randInt(1, 10);
-            std::cout << m_dieRoll << std::endl;
             m_ticksToMove = m_dieRoll * 8;
             m_walking = true;
         }
@@ -35,19 +89,72 @@ void Avatar::doSomething(){
         }
     }
     else{
+        std::cout << "THIS IS THE DIRECTION: " << m_dir << std::endl;
+        if(!canMoveForward(m_dir)){
+            findNewDir();
+        }
+        moveForward(m_dir);
+        m_ticksToMove--;
+        m_dieRoll = m_dieRoll - 1.0/20;
+        if(m_ticksToMove == 0)
+            m_walking = false;
         
+//        int action = getWorld()->getAction(m_id);
+//        switch(action){
+//            case ACTION_RIGHT:
+//                moveTo(getX() + SPRITE_WIDTH, getY());
+//                break;
+//            case ACTION_LEFT:
+//                moveTo(getX() - SPRITE_WIDTH, getY());
+//                break;
+//            case ACTION_UP:
+//                moveTo(getX(), getY() + SPRITE_HEIGHT);
+//                break;
+//            case ACTION_DOWN:
+//                moveTo(getX(), getY() - SPRITE_HEIGHT);
+//                break;
+//        }
     }
 }
+void Avatar::addCoins(int coins){
+    m_coins += coins;
+}
+int Avatar::getCoins(){
+    return m_coins;
+}
+int Avatar::getRolls(){
+    return m_dieRoll;
+}
+int Avatar::getStars(){
+    return m_stars;
+}
 
-Bowser::Bowser(GameWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY){}
+//======== MONSTER CLASS ========
+Monster::Monster(StudentWorld* world, int imageID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
+    
+}
+void Monster::doSomething(){
+    
+}
 
-Boo::Boo(GameWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY){}
+//======== SQUARE CLASS ========
+Square::Square(StudentWorld* world, int imageID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
+    
+}
+void Square::doSomething(){
+    
+}
 
-CoinSquare::CoinSquare(GameWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY){}
+//======== BOWSER CLASS ========
+Bowser::Bowser(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY, 0){}
 
-StarSquare::StarSquare(GameWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY){}
+Boo::Boo(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY, 0){}
 
-DirectionalSquare::DirectionalSquare(GameWorld* world, int imageID, double startX, double startY, int dir) : Actor(world, imageID, startX, startY){
+CoinSquare::CoinSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY, 1){}
+
+StarSquare::StarSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY, 1){}
+
+DirectionalSquare::DirectionalSquare(StudentWorld* world, int imageID, double startX, double startY, int dir) : Square(world, imageID, startX, startY, 1){
     switch(dir){
         case 0:
             setDirection(up);
@@ -64,8 +171,8 @@ DirectionalSquare::DirectionalSquare(GameWorld* world, int imageID, double start
     }
 }
 
-BankSquare::BankSquare(GameWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY){}
+BankSquare::BankSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY, 1){}
 
-EventSquare::EventSquare(GameWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY){}
+EventSquare::EventSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY, 1){}
 
-DroppingSquare::DroppingSquare(GameWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY){}
+DroppingSquare::DroppingSquare(StudentWorld* world, int imageID, double startX, double startY) : Square(world, imageID, startX, startY, 1){}

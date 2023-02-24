@@ -2,28 +2,40 @@
 #define ACTOR_H_
 
 #include "GraphObject.h"
-#include "GameWorld.h"
+
+class StudentWorld;
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 class Actor: public GraphObject {
     public:
-        Actor(GameWorld* world, int imageID, double startX, double startY);
-        GameWorld* getWorld();
+        Actor(StudentWorld* world, int imageID, double startX, double startY, int depth);
+        StudentWorld* getWorld();
+        bool isAlive();
+        virtual void doSomething() = 0;
     private:
-        GameWorld* m_world;
+        StudentWorld* m_world;
+        bool m_alive;
 };
 
 class Vortex: public Actor {
     
 };
 
-//Peach and Yoshi
+//Avatar Class for Peach and Yoshi
 class Avatar: public Actor {
     public:
-        Avatar(GameWorld* world, int imageID, int playerID, double startX, double startY);
+        Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY, int depth);
+        void findNewDir();
+        bool canMoveForward(int dir);
+        void moveForward(int dir);
         void doSomething();
+        void addCoins(int coins);
+        int getCoins();
+        int getRolls();
+        int getStars();
     private:
         int m_id;
+        int m_dir;
         bool m_walking;
         int m_coins;
         int m_stars;
@@ -32,47 +44,61 @@ class Avatar: public Actor {
         int m_ticksToMove;
 };
 
-//Bowser
-class Bowser: public Actor {
+//Monster class for Bowser and Boo
+class Monster: public Actor{
     public:
-        Bowser(GameWorld* world, int imageID, double startX, double startY);
+        Monster(StudentWorld* world, int imageID, double startX, double startY, int depth);
+        void doSomething();
+};
+
+//Bowser
+class Bowser: public Monster {
+    public:
+        Bowser(StudentWorld* world, int imageID, double startX, double startY);
 };
 
 //Boo
-class Boo: public Actor {
+class Boo: public Monster {
     public:
-        Boo(GameWorld* world, int imageID, double startX, double startY);
+        Boo(StudentWorld* world, int imageID, double startX, double startY);
+};
+
+//SQUARE CLASS
+class Square: public Actor {
+    public:
+        Square(StudentWorld* world, int imageID, double startX, double startY, int depth);
+        void doSomething();
 };
 
 //blue and red coin squares
-class CoinSquare: public Actor {
+class CoinSquare: public Square {
     public:
-        CoinSquare(GameWorld* world, int imageID, double startX, double startY);
+        CoinSquare(StudentWorld* world, int imageID, double startX, double startY);
 };
 
-class StarSquare: public Actor {
+class StarSquare: public Square {
     public:
-        StarSquare(GameWorld* world, int imageID, double startX, double startY);
+        StarSquare(StudentWorld* world, int imageID, double startX, double startY);
 };
 
-class DirectionalSquare: public Actor {
+class DirectionalSquare: public Square {
     public:
-        DirectionalSquare(GameWorld* world, int imageID, double startX, double startY, int dir);
+        DirectionalSquare(StudentWorld* world, int imageID, double startX, double startY, int dir);
 };
 
-class BankSquare: public Actor {
+class BankSquare: public Square {
     public:
-        BankSquare(GameWorld* world, int imageID, double startX, double startY);
+        BankSquare(StudentWorld* world, int imageID, double startX, double startY);
 };
 
-class EventSquare: public Actor {
+class EventSquare: public Square {
     public:
-        EventSquare(GameWorld* world, int imageID, double startX, double startY);
+        EventSquare(StudentWorld* world, int imageID, double startX, double startY);
 };
 
-class DroppingSquare: public Actor {
+class DroppingSquare: public Square {
     public:
-        DroppingSquare(GameWorld* world, int imageID, double startX, double startY);
+        DroppingSquare(StudentWorld* world, int imageID, double startX, double startY);
 };
 
 #endif // ACTOR_H_

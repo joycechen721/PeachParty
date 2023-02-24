@@ -16,11 +16,15 @@ class StudentWorld : public GameWorld
         //runs a single tick in a game
         virtual int move();
         virtual void cleanUp();
+        virtual ~StudentWorld();
+        Board getBoard();
 
-private:
-    Avatar* Peach;
-    Avatar* Yoshi;
-    std::vector<GraphObject*> m_actors;
+    private:
+        Board m_bd;
+        int m_bank;
+        Avatar* m_peach; //make into Avatar pointers, cause need to get coins
+        Avatar* m_yoshi;
+        std::vector<Actor*> m_actors;
 };
 
 #endif // STUDENTWORLD_H_
