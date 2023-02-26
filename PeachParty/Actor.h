@@ -29,6 +29,7 @@ class Avatar: public Actor {
         void findNewDir();
         bool canMoveForward(int dir);
         void moveForward(int dir);
+        void setMoveDirection(int dir);
         virtual void doSomething();
         void addCoins(int coins);
         void addStars(int stars);
@@ -38,6 +39,8 @@ class Avatar: public Actor {
         bool isWalking();
         bool isNew();
         void setNew(bool status);
+        bool isFork();
+        void changeDir(bool status);
     private:
         int m_id;
         int m_dir;
@@ -48,6 +51,8 @@ class Avatar: public Actor {
         int m_dieRoll;
         int m_ticksToMove;
         bool m_new;
+        bool m_fork;
+        bool m_changedDir;
 };
 
 //Monster class for Bowser and Boo
@@ -76,13 +81,10 @@ class Square: public Actor {
         virtual void doSomething() = 0;
         virtual void landAvatar(Avatar* avatar) = 0;
         bool isActive();
-        Avatar* getYoshi();
-        Avatar* getPeach();
         bool avatarLanded(Avatar* avatar);
+        bool avatarPassed(Avatar* avatar);
     private:
         bool m_active;
-        Avatar* m_yoshi;
-        Avatar* m_peach;
 };
 
 //blue and red coin squares
@@ -107,6 +109,8 @@ class DirectionalSquare: public Square {
         DirectionalSquare(StudentWorld* world, int imageID, double startX, double startY, int dir);
         void doSomething();
         void landAvatar(Avatar* avatar);
+    private:
+        int m_forceDir;
 };
 
 class BankSquare: public Square {

@@ -20,7 +20,6 @@ void Actor::setAlive(bool isAlive){
 
 //======== AVATAR CLASS (PARENT: ACTOR CLASS) ========
 Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
-//    std::cout << "START: " << startX << " END: " << startY << std::endl;
     m_id = playerID;
     m_dieRoll = 0;
     m_dir = right;
@@ -28,12 +27,19 @@ Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, do
     m_coins = 3;
     m_stars = 0;
     m_new = false;
+    m_fork = false;
 }
 //up over down, right over left
 void Avatar::findNewDir(){
     if(m_dir == left || m_dir == right){
-        if(canMoveForward(up)) m_dir = up;
-        else m_dir = down;
+        if(canMoveForward(up)){
+            m_dir = up;
+            std::cout << "NEW DIRECTION IS UP" << std::endl;
+        }
+        else {
+            m_dir = down;
+            std::cout << "NEW DIRECTION IS DOWN" << std::endl;
+        }
         setDirection(right);
     }
     else{
@@ -47,20 +53,32 @@ void Avatar::findNewDir(){
         }
     }
 }
+bool Avatar::isFork(){
+    switch(m_dir){
+        case up:
+            return (canMoveForward(up) && (canMoveForward(left) || canMoveForward(right))) || (canMoveForward(left) && canMoveForward(right));
+        case left:
+            return (canMoveForward(left) && (canMoveForward(up) || canMoveForward(down))) || (canMoveForward(up) && canMoveForward(down));
+        case right:
+            return (canMoveForward(right) && (canMoveForward(up) || canMoveForward(down))) || (canMoveForward(up) && canMoveForward(down));
+        default:
+            return (canMoveForward(down) && (canMoveForward(left) || canMoveForward(right))) || (canMoveForward(left) && canMoveForward(right));
+    }
+}
 bool Avatar::canMoveForward(int dir){
-    Board bd = getWorld()->getBoard();
+    Board* bd = getWorld()->getBoard();
     switch(dir){
         case right:
-            return bd.getContentsOf(getX()/SPRITE_WIDTH + 1, getY()/SPRITE_HEIGHT) != Board::empty;
+            return bd->getContentsOf(getX()/SPRITE_WIDTH + 1, getY()/SPRITE_HEIGHT) != Board::empty;
             break;
         case left:
-            return bd.getContentsOf(getX()/SPRITE_WIDTH - 1, getY()/SPRITE_HEIGHT) != Board::empty;
+            return bd->getContentsOf(getX()/SPRITE_WIDTH - 1, getY()/SPRITE_HEIGHT) != Board::empty;
             break;
         case up:
-            return bd.getContentsOf(getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT - 1) != Board::empty;
+            return bd->getContentsOf(getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT + 1) != Board::empty;
             break;
         default:
-            return bd.getContentsOf(getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT + 1) != Board::empty;
+            return bd->getContentsOf(getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT - 1) != Board::empty;
     }
 }
 void Avatar::moveForward(int dir){
@@ -72,11 +90,16 @@ void Avatar::moveForward(int dir){
             moveTo(getX() - 2, getY());
             break;
         case up:
-            moveTo(getX(), getY() - 2);
+            moveTo(getX(), getY() + 2);
             break;
         default:
-            moveTo(getX(), getY() + 2);
+            moveTo(getX(), getY() - 2);
     }
+}
+void Avatar::setMoveDirection(int dir){
+    m_dir = dir;
+    if(dir == left) setDirection(left);
+    else setDirection(right);
 }
 void Avatar::doSomething(){
     if(!m_walking){
@@ -93,41 +116,59 @@ void Avatar::doSomething(){
             return;
         }
     }
+    //if player is in a walking state
     else{
         m_new = true;
-        if(m_ticksToMove % 8 == 0 && !canMoveForward(m_dir)){
-            findNewDir();
+        //directional square check
+        if(m_changedDir){
+            m_changedDir = false;
+            if(m_fork) m_fork = false;
         }
-        //check if can move forward in other directions as well
-        //have user input
+        //if location is a fork
+        else if(m_ticksToMove % 8 == 0 && m_fork){
+            std::cout << "IS FORK" << std::endl;
+            int action = getWorld()->getAction(m_id);
+            if(action == ACTION_RIGHT && canMoveForward(right)){
+                setDirection(right);
+                m_dir = right;
+                m_fork = false;
+            }
+            else if(action == ACTION_LEFT && canMoveForward(left)){
+                setDirection(left);
+                m_dir = left;
+                m_fork = false;
+            }
+            else if(action == ACTION_UP && canMoveForward(up)){
+                std::cout << "GOING UP" << std::endl;
+                setDirection(right);
+                m_dir = up;
+                m_fork = false;
+            }
+            else if(action == ACTION_DOWN && canMoveForward(down)){
+                std::cout << "GOING DOWN" << std::endl;
+                setDirection(right);
+                m_dir = down;
+                m_fork = false;
+            }
+            else{
+                return;
+            }
+        }
+        //if can't move forward in curr direction, go perpendicular
+        else if(m_ticksToMove % 8 == 0 && !canMoveForward(m_dir))
+            findNewDir();
+        //below will always execute
         moveForward(m_dir);
         m_ticksToMove--;
-        if(m_ticksToMove % 8 == 0) m_dieRoll--;
+        if(m_ticksToMove % 8 == 0){
+            m_dieRoll--;
+            if(isFork()) m_fork = true;
+        }
         if(m_ticksToMove == 0){
             m_walking = false;
         }
     }
 }
-//void Avatar::canMoveDiff(){
-//
-//}
-//int Avatar::chooseDir(int dir1, int dir2){
-//    int action = getWorld()->getAction(m_id);
-//    switch(action){
-//        case ACTION_RIGHT:
-//            moveTo(getX() + SPRITE_WIDTH, getY());
-//            break;
-//        case ACTION_LEFT:
-//            moveTo(getX() - SPRITE_WIDTH, getY());
-//            break;
-//        case ACTION_UP:
-//            moveTo(getX(), getY() + SPRITE_HEIGHT);
-//            break;
-//        case ACTION_DOWN:
-//            moveTo(getX(), getY() - SPRITE_HEIGHT);
-//            break;
-//    }
-//}
 void Avatar::addCoins(int coins){
     m_coins += coins;
     if(m_coins < 0) m_coins = 0;
@@ -154,6 +195,9 @@ bool Avatar::isNew(){
 void Avatar::setNew(bool status){
     m_new = status;
 }
+void Avatar::changeDir(bool status){
+    m_changedDir = status;
+}
 
 //======== MONSTER CLASS (PARENT: ACTOR CLASS)========
 Monster::Monster(StudentWorld* world, int imageID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
@@ -173,20 +217,15 @@ Boo::Boo(StudentWorld* world, int imageID, double startX, double startY) : Monst
 //======== SQUARE CLASS (PARENT: ACTOR CLASS) ========
 Square::Square(StudentWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY, 1){
     m_active = true;
-    m_yoshi = world->getYoshi();
-    m_peach = world->getPeach();
 }
 void Square::doSomething(){
     
 }
-Avatar* Square::getYoshi(){
-    return m_yoshi;
-}
-Avatar* Square::getPeach(){
-    return m_peach;
-}
 bool Square::avatarLanded(Avatar* avatar){
-    return avatar->getX() == getX() && avatar->getY() == getY() && !avatar->isWalking() && avatar->isNew();
+    return !avatar->isWalking() && avatar->isNew() && getX() == avatar->getX() && getY() == avatar->getY();
+}
+bool Square::avatarPassed(Avatar* avatar){
+    return avatar->isWalking() && getX() == avatar->getX() && getY() == avatar->getY();
 }
 
 //======== COIN_SQUARE CLASS (PARENT: SQUARE CLASS) ========
@@ -197,8 +236,8 @@ void CoinSquare::doSomething(){
     if(!isAlive()){
         return;
     }
-    landAvatar(getPeach());
-    landAvatar(getYoshi());
+    landAvatar(getWorld()->getPeach());
+    landAvatar(getWorld()->getYoshi());
 }
 void CoinSquare::landAvatar(Avatar* avatar){
     if(avatarLanded(avatar)){
@@ -219,8 +258,8 @@ StarSquare::StarSquare(StudentWorld* world, int imageID, double startX, double s
     
 }
 void StarSquare::doSomething(){
-    landAvatar(getPeach());
-    landAvatar(getYoshi());
+    landAvatar(getWorld()->getPeach());
+    landAvatar(getWorld()->getYoshi());
 }
 void StarSquare::landAvatar(Avatar* avatar){
     if(avatarLanded(avatar)){
@@ -237,10 +276,10 @@ BankSquare::BankSquare(StudentWorld* world, int imageID, double startX, double s
     
 }
 void BankSquare::doSomething(){
-    landAvatar(getPeach());
-    landAvatar(getYoshi());
-    moveAvatar(getPeach());
-    moveAvatar(getYoshi());
+    landAvatar(getWorld()->getPeach());
+    landAvatar(getWorld()->getYoshi());
+    moveAvatar(getWorld()->getPeach());
+    moveAvatar(getWorld()->getYoshi());
 }
 void BankSquare::landAvatar(Avatar *avatar){
     if(avatarLanded(avatar)){
@@ -251,10 +290,9 @@ void BankSquare::landAvatar(Avatar *avatar){
     }
 }
 void BankSquare::moveAvatar(Avatar *avatar){
-    if(avatar->getX() == getX() && avatar->getY() == getY() && avatar->isWalking()){
+    if(avatarPassed(avatar)){
         int deduction = (avatar->getCoins()) < 5 ? avatar->getCoins() : 5;
         avatar->addCoins(deduction * -1);
-        std::cout << "DEDUCTED: " << deduction << std::endl;
         getWorld()->addToBank(deduction);
         getWorld()->playSound(SOUND_DEPOSIT_BANK);
 //        avatar->setNew(false);
@@ -263,26 +301,19 @@ void BankSquare::moveAvatar(Avatar *avatar){
 
 //======== DIRECTIONAL_SQUARE CLASS (PARENT: SQUARE CLASS) ========
 DirectionalSquare::DirectionalSquare(StudentWorld* world, int imageID, double startX, double startY, int dir) : Square(world, imageID, startX, startY){
-    switch(dir){
-        case 0:
-            setDirection(up);
-            break;
-        case 1:
-            setDirection(down);
-            break;
-        case 2:
-            setDirection(right);
-            break;
-        case 3:
-            setDirection(left);
-            break;
-    }
+    setDirection(dir);
+    m_forceDir = dir;
 }
 void DirectionalSquare::doSomething(){
-    
+    landAvatar(getWorld()->getPeach());
+    landAvatar(getWorld()->getYoshi());
 }
 void DirectionalSquare::landAvatar(Avatar *avatar){
-    
+    if(avatarLanded(avatar) || avatarPassed(avatar)){
+        std::cout << "AVATAR PASSED A DIRECTIONAL SQUARE" << std::endl;
+        avatar->setMoveDirection(m_forceDir);
+        avatar->changeDir(true);
+    }
 }
 
 //======== EVENT_SQUARE CLASS (PARENT: SQUARE CLASS) ========
@@ -301,8 +332,8 @@ DroppingSquare::DroppingSquare(StudentWorld* world, int imageID, double startX, 
     
 }
 void DroppingSquare::doSomething(){
-    landAvatar(getPeach());
-    landAvatar(getYoshi());
+    landAvatar(getWorld()->getPeach());
+    landAvatar(getWorld()->getYoshi());
 }
 void DroppingSquare::landAvatar(Avatar *avatar){
     if(avatarLanded(avatar)){

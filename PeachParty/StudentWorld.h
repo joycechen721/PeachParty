@@ -17,7 +17,7 @@ class StudentWorld : public GameWorld
         virtual int move();
         virtual void cleanUp();
         virtual ~StudentWorld();
-        Board getBoard();
+        Board* getBoard();
         Avatar* getPeach();
         Avatar* getYoshi();
         int getBankAmt();

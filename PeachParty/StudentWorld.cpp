@@ -1,7 +1,6 @@
 #include "StudentWorld.h"
 #include "GameConstants.h"
 #include <string>
-#include <sstream>
 using namespace std;
 
 GameWorld* createStudentWorld(string assetPath)
@@ -20,9 +19,8 @@ int StudentWorld::init()
 {
     startCountdownTimer(100);
     m_bank = 0;
-    ostringstream oss;
-    oss << getBoardNumber();
-    string board_file = assetPath() + "board0" + oss.str() + ".txt";
+    int boardNum = getBoardNumber();
+    string board_file = assetPath() + "board0" + std::to_string(boardNum) + ".txt";
     Board::LoadResult result = m_bd.loadBoard(board_file);
     
     for(int col = 0; col < BOARD_WIDTH; col++){
@@ -35,7 +33,9 @@ int StudentWorld::init()
                     break;
                 case Board::player:
                     m_yoshi = new Avatar(this, IID_YOSHI, 2, sprite_col, sprite_row, 0);
+                    std::cout << "YOSHI CREATED: " << m_yoshi->isWalking() << std::endl;
                     m_peach = new Avatar(this, IID_PEACH, 1, sprite_col, sprite_row, 0);
+                    std::cout << "PEACH CREATED" << std::endl;
                     m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
                     break;
                 case Board::boo:
@@ -81,41 +81,6 @@ int StudentWorld::move()
 {
     // This code is here merely to allow the game to build, run, and terminate after you hit ESC.
     // Notice that the return value GWSTATUS_NOT_IMPLEMENTED will cause our framework to end the game.
-    
-    m_yoshi->doSomething();
-    m_peach->doSomething();
-    
-    vector<Actor*>::iterator it = m_actors.begin();
-    while(it != m_actors.end()){
-        if((*it)->isAlive()){
-            (*it)->doSomething();
-            it++;
-        }
-        else{
-            delete *it;
-            it = m_actors.erase(it);
-        }
-    }
-    
-//   P1 Roll: 3 Stars: 2 $$: 15 | Time: 75 | Bank: 9 | P2 Roll: 0 Stars: 1 $$: 22 VOR
-    ostringstream time;
-    time << timeRemaining();
-    ostringstream p1Roll;
-    p1Roll << m_peach->getRolls();
-    ostringstream p2Roll;
-    p2Roll << m_yoshi->getRolls();
-    ostringstream p1Stars;
-    p1Stars << m_peach->getStars();
-    ostringstream p2Stars;
-    p2Stars << m_yoshi->getStars();
-    ostringstream p1Coins;
-    p1Coins << m_peach->getCoins();
-    ostringstream p2Coins;
-    p2Coins << m_yoshi->getCoins();
-    ostringstream bank;
-    bank << m_bank;
-    setGameStatText("P1 Roll: " + p1Roll.str() + " Stars: " + p1Stars.str() + " $$: " + p1Coins.str() + " | " + "Time: " + time.str() + " | Bank: " + bank.str() + " | P2 Roll: " + p2Roll.str() + " Stars: " + p2Stars.str() + " $$: " + p2Coins.str());
-    
     if (timeRemaining() <= 0){
         playSound(SOUND_GAME_FINISHED);
         if(m_yoshi->getCoins() + m_yoshi->getStars() > m_peach->getCoins() + m_yoshi->getStars()){
@@ -136,6 +101,36 @@ int StudentWorld::move()
             return GWSTATUS_YOSHI_WON;
         }
     }
+    
+    vector<Actor*>::iterator it = m_actors.begin();
+    while(it != m_actors.end()){
+        if((*it)->isAlive()){
+            (*it)->doSomething();
+            it++;
+        }
+        else{
+            delete *it;
+            it = m_actors.erase(it);
+        }
+    }
+    
+    if(m_yoshi->isAlive()) m_yoshi->doSomething();
+    else delete m_yoshi;
+    
+    if(m_peach->isAlive()) m_peach->doSomething();
+    else delete m_peach;
+    
+//   P1 Roll: 3 Stars: 2 $$: 15 | Time: 75 | Bank: 9 | P2 Roll: 0 Stars: 1 $$: 22 VOR
+    int time = timeRemaining();
+    int p1Roll = m_peach->getRolls();
+    int p2Roll = m_yoshi->getRolls();
+    int p1Stars = m_peach->getStars();
+    int p2Stars = m_yoshi->getStars();
+    int p1Coins = m_peach->getCoins();
+    int p2Coins = m_yoshi->getCoins();
+    int bank = m_bank;
+    setGameStatText("P1 Roll: " + std::to_string(p1Roll) + " Stars: " + std::to_string(p1Stars) + " $$: " + std::to_string(p1Coins) + " | " + "Time: " + std::to_string(time) + " | Bank: " + std::to_string(bank) + " | P2 Roll: " + std::to_string(p2Roll) + " Stars: " + std::to_string(p2Stars) + " $$: " + std::to_string(p2Coins));
+    
 	return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -156,8 +151,8 @@ StudentWorld::~StudentWorld(){
         cleanUp();
 }
 
-Board StudentWorld::getBoard(){
-    return m_bd;
+Board* StudentWorld::getBoard(){
+    return &m_bd;
 }
 
 Avatar* StudentWorld::getPeach(){
