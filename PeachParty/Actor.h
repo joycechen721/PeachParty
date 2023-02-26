@@ -22,59 +22,77 @@ class Vortex: public Actor {
     
 };
 
+class Character: public Actor{
+public:
+    Character(StudentWorld* world, int imageID, double startX, double startY);
+    virtual void doSomething() = 0;
+    void findNewDir();
+    void moveForward(int dir);
+    void setMoveDirection(int dir);
+    bool canMoveForward(int dir);
+    bool checkUserAction(int playerID);
+    bool isFork();
+    //getters and setters
+    void setWalkDir(int dir);
+    int getWalkDir();
+    void setWalkStatus(bool isWalking);
+    bool isWalking();
+    void setTicks(int ticks);
+    int getTicks();
+    void setFork(bool isFork);
+    bool getFork();
+private:
+    int m_dir;
+    bool m_walking;
+    int m_ticksToMove;
+    bool m_fork;
+};
+
 //Avatar Class for Peach and Yoshi
-class Avatar: public Actor {
+class Avatar: public Character {
     public:
-        Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY, int depth);
-        void findNewDir();
-        bool canMoveForward(int dir);
-        void moveForward(int dir);
-        void setMoveDirection(int dir);
+        Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY);
         virtual void doSomething();
         void addCoins(int coins);
         void addStars(int stars);
         int getCoins();
         int getRolls();
         int getStars();
-        bool isWalking();
         bool isNew();
         void setNew(bool status);
-        bool isFork();
         void changeDir(bool status);
         void swapPlayer(Avatar* avatar);
         Vortex* getVortex();
         void giveVortex();
     private:
         int m_id;
-        int m_dir;
-        bool m_walking;
         int m_coins;
         int m_stars;
-        Vortex* m_vortex;
         int m_dieRoll;
-        int m_ticksToMove;
         bool m_new;
-        bool m_fork;
         bool m_changedDir;
+        Vortex* m_vortex;
 };
 
 //Monster class for Bowser and Boo
-class Monster: public Actor{
+class Monster: public Character{
     public:
-        Monster(StudentWorld* world, int imageID, double startX, double startY, int depth);
-        virtual void doSomething();
+        Monster(StudentWorld* world, int imageID, double startX, double startY);
+        void doSomething();
 };
 
 //Bowser
 class Bowser: public Monster {
     public:
         Bowser(StudentWorld* world, int imageID, double startX, double startY);
+        virtual void doSomething();
 };
 
 //Boo
 class Boo: public Monster {
     public:
         Boo(StudentWorld* world, int imageID, double startX, double startY);
+        virtual void doSomething();
 };
 
 //SQUARE CLASS

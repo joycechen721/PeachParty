@@ -32,9 +32,9 @@ int StudentWorld::init()
                 case Board::empty:
                     break;
                 case Board::player:
-                    m_yoshi = new Avatar(this, IID_YOSHI, 2, sprite_col, sprite_row, 0);
+                    m_yoshi = new Avatar(this, IID_YOSHI, 2, sprite_col, sprite_row);
                     std::cout << "YOSHI CREATED: " << m_yoshi->isWalking() << std::endl;
-                    m_peach = new Avatar(this, IID_PEACH, 1, sprite_col, sprite_row, 0);
+                    m_peach = new Avatar(this, IID_PEACH, 1, sprite_col, sprite_row);
                     std::cout << "PEACH CREATED" << std::endl;
                     m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
                     break;

@@ -18,20 +18,13 @@ void Actor::setAlive(bool isAlive){
     m_alive = isAlive;
 }
 
-//======== AVATAR CLASS (PARENT: ACTOR CLASS) ========
-Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
-    m_id = playerID;
-    m_dieRoll = 0;
+//======== CHARACTER CLASS (PARENT: ACTOR CLASS) ========
+Character::Character(StudentWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY, 0){
     m_dir = right;
     m_walking = false;
-    m_coins = 3;
-    m_stars = 0;
-    m_new = false;
     m_fork = false;
-    m_vortex = nullptr;
 }
-//up over down, right over left
-void Avatar::findNewDir(){
+void Character::findNewDir(){
     if(m_dir == left || m_dir == right){
         if(canMoveForward(up)){
             m_dir = up;
@@ -54,7 +47,7 @@ void Avatar::findNewDir(){
         }
     }
 }
-bool Avatar::isFork(){
+bool Character::isFork(){
     switch(m_dir){
         case up:
             return (canMoveForward(up) && (canMoveForward(left) || canMoveForward(right))) || (canMoveForward(left) && canMoveForward(right));
@@ -66,7 +59,7 @@ bool Avatar::isFork(){
             return (canMoveForward(down) && (canMoveForward(left) || canMoveForward(right))) || (canMoveForward(left) && canMoveForward(right));
     }
 }
-bool Avatar::canMoveForward(int dir){
+bool Character::canMoveForward(int dir){
     Board* bd = getWorld()->getBoard();
     switch(dir){
         case right:
@@ -82,7 +75,7 @@ bool Avatar::canMoveForward(int dir){
             return bd->getContentsOf(getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT - 1) != Board::empty;
     }
 }
-void Avatar::moveForward(int dir){
+void Character::moveForward(int dir){
     switch(dir){
         case right:
             moveTo(getX() + 2, getY());
@@ -97,18 +90,84 @@ void Avatar::moveForward(int dir){
             moveTo(getX(), getY() - 2);
     }
 }
-void Avatar::setMoveDirection(int dir){
+//up over down, right over left
+void Character::setMoveDirection(int dir){
     m_dir = dir;
     if(dir == left) setDirection(left);
     else setDirection(right);
 }
+bool Character::checkUserAction(int playerID){
+    std::cout << "IS FORK" << std::endl;
+    int action = getWorld()->getAction(playerID);
+    if(action == ACTION_RIGHT && canMoveForward(right) && m_dir != left){
+        setDirection(right);
+        m_dir = right;
+        m_fork = false;
+        return true;
+    }
+    else if(action == ACTION_LEFT && canMoveForward(left) && m_dir != right){
+        setDirection(left);
+        m_dir = left;
+        m_fork = false;
+        return true;
+    }
+    else if(action == ACTION_UP && canMoveForward(up) && m_dir != down){
+        std::cout << "GOING UP" << std::endl;
+        setDirection(right);
+        m_dir = up;
+        m_fork = false;
+        return true;
+    }
+    else if(action == ACTION_DOWN && canMoveForward(down) && m_dir != up){
+        std::cout << "GOING DOWN" << std::endl;
+        setDirection(right);
+        m_dir = down;
+        m_fork = false;
+        return true;
+    }
+    return false;
+}
+void Character::setWalkDir(int dir){
+    m_dir = dir;
+}
+int Character::getWalkDir(){
+    return m_dir;
+}
+void Character::setWalkStatus(bool isWalking){
+    m_walking = isWalking;
+}
+bool Character::isWalking(){
+    return m_walking;
+}
+void Character::setTicks(int ticks){
+    m_ticksToMove = ticks;
+}
+int Character::getTicks(){
+    return m_ticksToMove;
+}
+void Character::setFork(bool isFork){
+    m_fork = isFork;
+}
+bool Character::getFork(){
+    return m_fork;
+}
+
+//======== AVATAR CLASS (PARENT: CHARACTER CLASS) ========
+Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY) : Character(world, imageID, startX, startY){
+    m_id = playerID;
+    m_dieRoll = 0;
+    m_coins = 3;
+    m_stars = 0;
+    m_new = false;
+    m_vortex = nullptr;
+}
 void Avatar::doSomething(){
-    if(!m_walking){
+    if(!isWalking()){
         int action = getWorld()->getAction(m_id);
         if(action == ACTION_ROLL){
             m_dieRoll = randInt(1, 10);
-            m_ticksToMove = m_dieRoll * 8;
-            m_walking = true;
+            setTicks(m_dieRoll * 8);
+            setWalkStatus(true);
         }
         else if(action == ACTION_FIRE){
             getWorld()->playSound(SOUND_PLAYER_FIRE);
@@ -123,50 +182,26 @@ void Avatar::doSomething(){
         //directional square check
         if(m_changedDir){
             m_changedDir = false;
-            if(m_fork) m_fork = false;
+            if(getFork()) setFork(false);
         }
         //if location is a fork
-        else if(m_ticksToMove % 8 == 0 && m_fork){
-            std::cout << "IS FORK" << std::endl;
-            int action = getWorld()->getAction(m_id);
-            if(action == ACTION_RIGHT && canMoveForward(right)){
-                setDirection(right);
-                m_dir = right;
-                m_fork = false;
-            }
-            else if(action == ACTION_LEFT && canMoveForward(left)){
-                setDirection(left);
-                m_dir = left;
-                m_fork = false;
-            }
-            else if(action == ACTION_UP && canMoveForward(up)){
-                std::cout << "GOING UP" << std::endl;
-                setDirection(right);
-                m_dir = up;
-                m_fork = false;
-            }
-            else if(action == ACTION_DOWN && canMoveForward(down)){
-                std::cout << "GOING DOWN" << std::endl;
-                setDirection(right);
-                m_dir = down;
-                m_fork = false;
-            }
-            else{
+        else if(getTicks() % 8 == 0 && getFork()){
+            if(!checkUserAction(m_id)){
                 return;
             }
         }
         //if can't move forward in curr direction, go perpendicular
-        else if(m_ticksToMove % 8 == 0 && !canMoveForward(m_dir))
+        else if(getTicks() % 8 == 0 && !canMoveForward(getWalkDir()))
             findNewDir();
         //below will always execute
-        moveForward(m_dir);
-        m_ticksToMove--;
-        if(m_ticksToMove % 8 == 0){
+        moveForward(getWalkDir());
+        setTicks(getTicks() - 1);
+        if(getTicks() % 8 == 0){
             m_dieRoll--;
-            if(isFork()) m_fork = true;
+            if(isFork()) setFork(true);
         }
-        if(m_ticksToMove == 0){
-            m_walking = false;
+        if(getTicks() == 0){
+            setWalkStatus(false);
         }
     }
 }
@@ -194,9 +229,6 @@ void Avatar::giveVortex(){
 //    m_vortex = new Vortex();
     getWorld()->playSound(SOUND_GIVE_VORTEX);
 }
-bool Avatar::isWalking(){
-    return m_walking;
-}
 bool Avatar::isNew(){
     return m_new;
 }
@@ -214,14 +246,14 @@ void Avatar::swapPlayer(Avatar *avatar){
     avatar->moveTo(tempX, tempY);
     
     //swap number of ticks left
-    int tempTicks = m_ticksToMove;
-    m_ticksToMove = avatar->m_ticksToMove;
-    avatar->m_ticksToMove = tempTicks;
+    int tempTicks = getTicks();
+    setTicks(avatar->getTicks());
+    avatar->setTicks(tempTicks);
     
     //swap walk direction
-    int tempDir = m_dir;
-    m_dir = avatar->m_dir;
-    avatar->m_dir = tempDir;
+    int tempDir = getWalkDir();
+    setWalkDir(avatar->getWalkDir());
+    avatar->setWalkDir(tempDir);
     
     //swap sprite direction
     int tempSpriteDir = getDirection();
@@ -229,17 +261,17 @@ void Avatar::swapPlayer(Avatar *avatar){
     avatar->setDirection(tempSpriteDir);
     
     //swap roll/walk state
-    bool tempStatus = m_walking;
-    m_walking = avatar->m_walking;
-    avatar->m_walking = tempStatus;
+    bool tempStatus = isWalking();
+    setWalkStatus(avatar->isWalking());
+    avatar->setWalkStatus(tempStatus);
     
 //    bool tempNew = m_new;
 //    m_new = avatar->m_new;
 //    avatar->m_new = tempNew;
 }
 
-//======== MONSTER CLASS (PARENT: ACTOR CLASS)========
-Monster::Monster(StudentWorld* world, int imageID, double startX, double startY, int depth) : Actor(world, imageID, startX, startY, depth){
+//======== MONSTER CLASS ========
+Monster::Monster(StudentWorld* world, int imageID, double startX, double startY) : Character(world, imageID, startX, startY){
     
 }
 void Monster::doSomething(){
@@ -247,11 +279,20 @@ void Monster::doSomething(){
 }
 
 //======== BOWSER CLASS (PARENT: MONSTER CLASS) ========
-Bowser::Bowser(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY, 0){}
+Bowser::Bowser(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY){
+    
+}
+void Bowser::doSomething(){
+    
+}
 
 //======== BOO CLASS (PARENT: MONSTER CLASS) ========
-Boo::Boo(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY, 0){}
-
+Boo::Boo(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY){
+    
+}
+void Boo::doSomething(){
+    
+}
 
 //======== SQUARE CLASS (PARENT: ACTOR CLASS) ========
 Square::Square(StudentWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY, 1){
