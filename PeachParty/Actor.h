@@ -41,6 +41,9 @@ class Avatar: public Actor {
         void setNew(bool status);
         bool isFork();
         void changeDir(bool status);
+        void swapPlayer(Avatar* avatar);
+        Vortex* getVortex();
+        void giveVortex();
     private:
         int m_id;
         int m_dir;
@@ -83,6 +86,7 @@ class Square: public Actor {
         bool isActive();
         bool avatarLanded(Avatar* avatar);
         bool avatarPassed(Avatar* avatar);
+        void getRandomSquare(int& newX, int& newY);
     private:
         bool m_active;
 };
