@@ -24,6 +24,7 @@ Character::Character(StudentWorld* world, int imageID, double startX, double sta
     m_walking = false;
     m_fork = false;
 }
+//up over down, right over left
 void Character::findNewDir(){
     if(m_dir == left || m_dir == right){
         if(canMoveForward(up)){
@@ -71,8 +72,10 @@ bool Character::canMoveForward(int dir){
         case up:
             return bd->getContentsOf(getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT + 1) != Board::empty;
             break;
-        default:
+        case down:
             return bd->getContentsOf(getX()/SPRITE_WIDTH, getY()/SPRITE_HEIGHT - 1) != Board::empty;
+        default:
+            return false;
     }
 }
 void Character::moveForward(int dir){
@@ -86,11 +89,10 @@ void Character::moveForward(int dir){
         case up:
             moveTo(getX(), getY() + 2);
             break;
-        default:
+        case down:
             moveTo(getX(), getY() - 2);
     }
 }
-//up over down, right over left
 void Character::setMoveDirection(int dir){
     m_dir = dir;
     if(dir == left) setDirection(left);
@@ -235,6 +237,12 @@ bool Avatar::isNew(){
 void Avatar::setNew(bool status){
     m_new = status;
 }
+bool Avatar::isOverlapped(){
+    return m_overlapped;
+}
+void Avatar::setOverlapped(bool overlapped){
+    m_overlapped = overlapped;
+}
 void Avatar::changeDir(bool status){
     m_changedDir = status;
 }
@@ -270,20 +278,95 @@ void Avatar::swapPlayer(Avatar *avatar){
 //    avatar->m_new = tempNew;
 }
 
-//======== MONSTER CLASS ========
+//======== MONSTER CLASS (PARENT: CHARACTER CLASS) ========
 Monster::Monster(StudentWorld* world, int imageID, double startX, double startY) : Character(world, imageID, startX, startY){
-    
+    m_pauseCounter = 180;
+    m_squares = 0;
 }
-void Monster::doSomething(){
-    
+int Monster::pickDirection(){
+    int randomDir = -1;
+    do{
+        randomDir = 90 * randInt(0,3);
+    }
+    while(!canMoveForward(randomDir));
+    switch(randomDir){
+        case left:
+            setDirection(left);
+            break;
+        default:
+            setDirection(right);
+    }
+    return randomDir;
 }
+void Monster::handleZeroPaused(){
+    std::cout << "HANDLE ZERO PAUSE" << std::endl;
+    m_squares = randInt(1, 10);
+    setTicks(m_squares * 8);
+    setWalkDir(pickDirection());
+    setWalkStatus(true);
+}
+void Monster::startWalking(){
+    std::cout << "STARTED WALKING" << std::endl;
+    if(getTicks() % 8 == 0 && getFork()){
+        setWalkDir(pickDirection());
+    }
+    else if(getTicks() % 8 == 0 && !canMoveForward(getWalkDir())){
+        findNewDir();
+    }
+    moveForward(getWalkDir());
+    setTicks(getTicks()-1);
+}
+int Monster::getPauseCounter(){
+    return m_pauseCounter;
+}
+void Monster::setPauseCounter(int count){
+    m_pauseCounter = count;
+}
+void Monster::checkOverlap(Avatar* avatar){
+    std::cout << "OVERLAPPED!!! WITH BOWSER!!" << std::endl;
+    if(avatar->isOverlapped() && !avatar->isWalking() && getX() == avatar->getX() && getY() == avatar->getY()){
+        executeOverlap(avatar);
+        avatar->setOverlapped(false);
+    }
+}
+//std::vector<Actor*>::iterator Monster::getIterator(){
+//    return m_it;
+//}
+//void Monster::incrementIterator(){
+//    m_it++;
+//}
 
 //======== BOWSER CLASS (PARENT: MONSTER CLASS) ========
 Bowser::Bowser(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY){
     
 }
+void Bowser::executeOverlap(Avatar* avatar){
+    std::cout << "EXECUTED OVERLAPPP!" << std::endl;
+    if(randInt(0,1)){
+        avatar->addCoins(avatar->getCoins() * -1);
+        avatar->addStars(avatar->getStars() * -1);
+        getWorld()->playSound(SOUND_BOWSER_ACTIVATE);
+    }
+}
 void Bowser::doSomething(){
-    
+    if(!isWalking()){
+        checkOverlap(getWorld()->getPeach());
+        checkOverlap(getWorld()->getYoshi());
+        setPauseCounter(getPauseCounter() - 1);
+        if(getPauseCounter() == 0){
+            handleZeroPaused();
+        }
+    }
+    else{
+        startWalking();
+        if(getTicks() == 0){
+            setWalkStatus(false);
+            setPauseCounter(180);
+            //implement below as 25% chance
+//            getWorld()->replaceSquare(getX(), getY());
+            getWorld()->playSound(SOUND_DROPPING_SQUARE_CREATED);
+        }
+    }
 }
 
 //======== BOO CLASS (PARENT: MONSTER CLASS) ========
@@ -291,6 +374,9 @@ Boo::Boo(StudentWorld* world, int imageID, double startX, double startY) : Monst
     
 }
 void Boo::doSomething(){
+    
+}
+void Boo::executeOverlap(Avatar* avatar){
     
 }
 
@@ -347,7 +433,7 @@ void StarSquare::doSomething(){
     landAvatar(getWorld()->getYoshi());
 }
 void StarSquare::landAvatar(Avatar* avatar){
-    if(avatarLanded(avatar)){
+    if(avatarPassed(avatar) || avatarLanded(avatar)){
         if(avatar->getCoins() < 20) return;
         avatar->addCoins(-20);
         avatar->addStars(1);

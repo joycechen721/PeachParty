@@ -40,9 +40,11 @@ int StudentWorld::init()
                     break;
                 case Board::boo:
                     m_actors.push_back(new Boo(this, IID_BOO, sprite_col, sprite_row));
+                    m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
                     break;
                 case Board::bowser:
                     m_actors.push_back(new Bowser(this, IID_BOWSER, sprite_col, sprite_row));
+                    m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
                     break;
                 case Board::blue_coin_square:
                     m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
@@ -163,10 +165,23 @@ Avatar* StudentWorld::getYoshi(){
     return m_yoshi;
 }
 
+//std::vector<Actor*>::iterator StudentWorld::getActors(){
+//    return m_actors.begin();
+//}
+
 int StudentWorld::getBankAmt(){
     return m_bank;
 }
 
 void StudentWorld::addToBank(int amt){
     m_bank += amt;
+}
+
+void StudentWorld::replaceSquare(int x, int y){
+    vector<Actor*>::iterator it = m_actors.begin();
+    while(it != m_actors.end() && (*it)->getX() != x && (*it)->getY() != y){
+        it++;
+    }
+    delete *it;
+    *it = new DroppingSquare(this, IID_DROPPING_SQUARE, x, y);
 }

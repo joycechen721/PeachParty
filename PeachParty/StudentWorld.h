@@ -20,8 +20,10 @@ class StudentWorld : public GameWorld
         Board* getBoard();
         Avatar* getPeach();
         Avatar* getYoshi();
+        std::vector<Actor*>::iterator getActors();
         int getBankAmt();
         void addToBank(int amt);
+        void replaceSquare(int x, int y);
 
     private:
         Board m_bd;

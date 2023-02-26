@@ -60,6 +60,8 @@ class Avatar: public Character {
         int getStars();
         bool isNew();
         void setNew(bool status);
+        bool isOverlapped();
+        void setOverlapped(bool overlapped);
         void changeDir(bool status);
         void swapPlayer(Avatar* avatar);
         Vortex* getVortex();
@@ -70,6 +72,7 @@ class Avatar: public Character {
         int m_stars;
         int m_dieRoll;
         bool m_new;
+        bool m_overlapped;
         bool m_changedDir;
         Vortex* m_vortex;
 };
@@ -78,7 +81,20 @@ class Avatar: public Character {
 class Monster: public Character{
     public:
         Monster(StudentWorld* world, int imageID, double startX, double startY);
-        void doSomething();
+        virtual void doSomething() = 0;
+        void handleZeroPaused();
+        void startWalking();
+        int pickDirection();
+        int getPauseCounter();
+        void setPauseCounter(int count);
+        void checkOverlap(Avatar* avatar);
+        virtual void executeOverlap(Avatar* avatar) = 0;
+//        std::vector<Actor*>::iterator getIterator();
+//        void incrementIterator();
+    private:
+        int m_pauseCounter;
+        int m_squares;
+//        std::vector<Actor*>::iterator m_it;
 };
 
 //Bowser
@@ -86,6 +102,7 @@ class Bowser: public Monster {
     public:
         Bowser(StudentWorld* world, int imageID, double startX, double startY);
         virtual void doSomething();
+        virtual void executeOverlap(Avatar* avatar);
 };
 
 //Boo
@@ -93,6 +110,7 @@ class Boo: public Monster {
     public:
         Boo(StudentWorld* world, int imageID, double startX, double startY);
         virtual void doSomething();
+        virtual void executeOverlap(Avatar* avatar);
 };
 
 //SQUARE CLASS
