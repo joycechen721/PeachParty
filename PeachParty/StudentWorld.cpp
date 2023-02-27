@@ -33,9 +33,7 @@ int StudentWorld::init()
                     break;
                 case Board::player:
                     m_yoshi = new Avatar(this, IID_YOSHI, 2, sprite_col, sprite_row);
-                    std::cout << "YOSHI CREATED: " << m_yoshi->isWalking() << std::endl;
                     m_peach = new Avatar(this, IID_PEACH, 1, sprite_col, sprite_row);
-                    std::cout << "PEACH CREATED" << std::endl;
                     m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
                     break;
                 case Board::boo:
@@ -145,7 +143,6 @@ void StudentWorld::cleanUp()
     }
     delete m_peach;
     delete m_yoshi;
-    cout << "DELETION COMPLETE" << endl;
 }
 
 StudentWorld::~StudentWorld(){
@@ -179,7 +176,7 @@ void StudentWorld::addToBank(int amt){
 
 void StudentWorld::replaceSquare(int x, int y){
     vector<Actor*>::iterator it = m_actors.begin();
-    while(it != m_actors.end() && (*it)->getX() != x && (*it)->getY() != y){
+    while((*it)->getX() != x && (*it)->getY() != y){
         it++;
     }
     delete *it;

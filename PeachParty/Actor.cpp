@@ -29,11 +29,11 @@ void Character::findNewDir(){
     if(m_dir == left || m_dir == right){
         if(canMoveForward(up)){
             m_dir = up;
-            std::cout << "NEW DIRECTION IS UP" << std::endl;
+//            std::cout << "NEW DIRECTION IS UP" << std::endl;
         }
         else {
             m_dir = down;
-            std::cout << "NEW DIRECTION IS DOWN" << std::endl;
+//            std::cout << "NEW DIRECTION IS DOWN" << std::endl;
         }
         setDirection(right);
     }
@@ -99,7 +99,7 @@ void Character::setMoveDirection(int dir){
     else setDirection(right);
 }
 bool Character::checkUserAction(int playerID){
-    std::cout << "IS FORK" << std::endl;
+//    std::cout << "IS FORK" << std::endl;
     int action = getWorld()->getAction(playerID);
     if(action == ACTION_RIGHT && canMoveForward(right) && m_dir != left){
         setDirection(right);
@@ -114,14 +114,14 @@ bool Character::checkUserAction(int playerID){
         return true;
     }
     else if(action == ACTION_UP && canMoveForward(up) && m_dir != down){
-        std::cout << "GOING UP" << std::endl;
+//        std::cout << "GOING UP" << std::endl;
         setDirection(right);
         m_dir = up;
         m_fork = false;
         return true;
     }
     else if(action == ACTION_DOWN && canMoveForward(down) && m_dir != up){
-        std::cout << "GOING DOWN" << std::endl;
+//        std::cout << "GOING DOWN" << std::endl;
         setDirection(right);
         m_dir = down;
         m_fork = false;
@@ -158,9 +158,10 @@ bool Character::getFork(){
 Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY) : Character(world, imageID, startX, startY){
     m_id = playerID;
     m_dieRoll = 0;
-    m_coins = 3;
+    m_coins = 0;
     m_stars = 0;
-    m_new = false;
+    m_new = true;
+    m_overlapped = false;
     m_vortex = nullptr;
 }
 void Avatar::doSomething(){
@@ -181,6 +182,7 @@ void Avatar::doSomething(){
     //if player is in a walking state
     else{
         m_new = true;
+        m_overlapped = true;
         //directional square check
         if(m_changedDir){
             m_changedDir = false;
@@ -272,10 +274,11 @@ void Avatar::swapPlayer(Avatar *avatar){
     bool tempStatus = isWalking();
     setWalkStatus(avatar->isWalking());
     avatar->setWalkStatus(tempStatus);
-    
-//    bool tempNew = m_new;
-//    m_new = avatar->m_new;
-//    avatar->m_new = tempNew;
+}
+
+//======== VORTEX CLASS (PARENT: ACTOR CLASS) ========
+void Vortex::doSomething(){
+//    getWorld()->playSound(SOUND_HIT_BY_VORTEX);
 }
 
 //======== MONSTER CLASS (PARENT: CHARACTER CLASS) ========
@@ -299,14 +302,14 @@ int Monster::pickDirection(){
     return randomDir;
 }
 void Monster::handleZeroPaused(){
-    std::cout << "HANDLE ZERO PAUSE" << std::endl;
+//    std::cout << "HANDLE ZERO PAUSE" << std::endl;
     m_squares = randInt(1, 10);
     setTicks(m_squares * 8);
     setWalkDir(pickDirection());
     setWalkStatus(true);
 }
 void Monster::startWalking(){
-    std::cout << "STARTED WALKING" << std::endl;
+//    std::cout << "STARTED WALKING" << std::endl;
     if(getTicks() % 8 == 0 && getFork()){
         setWalkDir(pickDirection());
     }
@@ -323,25 +326,19 @@ void Monster::setPauseCounter(int count){
     m_pauseCounter = count;
 }
 void Monster::checkOverlap(Avatar* avatar){
-    std::cout << "OVERLAPPED!!! WITH BOWSER!!" << std::endl;
+//    std::cout << "OVERLAPPED!!! WITH BOWSER!!" << std::endl;
     if(avatar->isOverlapped() && !avatar->isWalking() && getX() == avatar->getX() && getY() == avatar->getY()){
         executeOverlap(avatar);
         avatar->setOverlapped(false);
     }
 }
-//std::vector<Actor*>::iterator Monster::getIterator(){
-//    return m_it;
-//}
-//void Monster::incrementIterator(){
-//    m_it++;
-//}
 
 //======== BOWSER CLASS (PARENT: MONSTER CLASS) ========
 Bowser::Bowser(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY){
     
 }
 void Bowser::executeOverlap(Avatar* avatar){
-    std::cout << "EXECUTED OVERLAPPP!" << std::endl;
+//    std::cout << "EXECUTED OVERLAPPP!" << std::endl;
     if(randInt(0,1)){
         avatar->addCoins(avatar->getCoins() * -1);
         avatar->addStars(avatar->getStars() * -1);
@@ -360,6 +357,7 @@ void Bowser::doSomething(){
     else{
         startWalking();
         if(getTicks() == 0){
+//            std::cout << "BOWSER JUST STOPPED WALKING" << std::endl;
             setWalkStatus(false);
             setPauseCounter(180);
             //implement below as 25% chance
@@ -374,7 +372,7 @@ Boo::Boo(StudentWorld* world, int imageID, double startX, double startY) : Monst
     
 }
 void Boo::doSomething(){
-    
+//    getWorld()->playSound(SOUND_BOO_ACTIVATE);
 }
 void Boo::executeOverlap(Avatar* avatar){
     
@@ -414,6 +412,7 @@ void CoinSquare::landAvatar(Avatar* avatar){
     if(avatarLanded(avatar)){
         if(m_give){
             avatar->addCoins(3);
+//            std::cout<<"PLAY SOUND" << std::endl;
             getWorld()->playSound(SOUND_GIVE_COIN);
         }
         else{
@@ -481,7 +480,7 @@ void DirectionalSquare::doSomething(){
 }
 void DirectionalSquare::landAvatar(Avatar *avatar){
     if(avatarLanded(avatar) || avatarPassed(avatar)){
-        std::cout << "AVATAR PASSED A DIRECTIONAL SQUARE" << std::endl;
+//        std::cout << "AVATAR PASSED A DIRECTIONAL SQUARE" << std::endl;
         avatar->setMoveDirection(m_forceDir);
         avatar->changeDir(true);
     }
@@ -500,7 +499,7 @@ void EventSquare::landAvatar(Avatar *avatar){
         int option = randInt(1,3);
         switch(option){
             case 1: {
-                std::cout << "MOVE TO RANDOM SQUARE" << std::endl;
+//                std::cout << "MOVE TO RANDOM SQUARE" << std::endl;
                 int x = -1;
                 int y = -1;
                 getRandomSquare(x,y);
@@ -509,7 +508,7 @@ void EventSquare::landAvatar(Avatar *avatar){
                 break;
             }
             case 2: {
-                std::cout << "SWAP PLAYERS" << std::endl;
+//                std::cout << "SWAP PLAYERS" << std::endl;
                 if(avatar == getWorld()->getPeach())
                     avatar->swapPlayer(getWorld()->getYoshi());
                 else
@@ -518,7 +517,7 @@ void EventSquare::landAvatar(Avatar *avatar){
                 break;
             }
             default: {
-                std::cout << "GIVE VORTEX" << std::endl;
+//                std::cout << "GIVE VORTEX" << std::endl;
                 if(avatar->getVortex() == nullptr)
                     avatar->giveVortex();
             }
