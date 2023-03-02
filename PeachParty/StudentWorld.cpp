@@ -28,12 +28,13 @@ int StudentWorld::init()
             Board::GridEntry ge = m_bd.getContentsOf(col, row);
             int sprite_col = col * SPRITE_WIDTH;
             int sprite_row = row * SPRITE_HEIGHT;
+            cout << "COL: " << sprite_col << " ROW: " << sprite_row << endl;
             switch (ge) {
                 case Board::empty:
                     break;
                 case Board::player:
-                    m_yoshi = new Avatar(this, IID_YOSHI, 2, sprite_col, sprite_row);
                     m_peach = new Avatar(this, IID_PEACH, 1, sprite_col, sprite_row);
+                    m_yoshi = new Avatar(this, IID_YOSHI, 2, sprite_col, sprite_row);
                     m_actors.push_back(new CoinSquare(this, IID_BLUE_COIN_SQUARE, sprite_col, sprite_row, true));
                     break;
                 case Board::boo:
@@ -75,6 +76,16 @@ int StudentWorld::init()
         }
     }
     return GWSTATUS_CONTINUE_GAME;
+}
+
+void StudentWorld::replaceSquare(int x, int y){
+    vector<Actor*>::iterator it = m_actors.begin();
+    while((*it)->getX() != x || (*it)->getY() != y || !(*it)->isSquare()){
+        it++;
+    }
+    std::cout << "REPLACED SQUARE X: " << (*it)->getX() << " Y: " << (*it)->getY() << std::endl;
+    delete *it;
+    *it = new DroppingSquare(this, IID_DROPPING_SQUARE, x, y);
 }
 
 int StudentWorld::move()
@@ -172,13 +183,4 @@ int StudentWorld::getBankAmt(){
 
 void StudentWorld::addToBank(int amt){
     m_bank += amt;
-}
-
-void StudentWorld::replaceSquare(int x, int y){
-    vector<Actor*>::iterator it = m_actors.begin();
-    while((*it)->getX() != x && (*it)->getY() != y){
-        it++;
-    }
-    delete *it;
-    *it = new DroppingSquare(this, IID_DROPPING_SQUARE, x, y);
 }

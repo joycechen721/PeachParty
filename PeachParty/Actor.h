@@ -13,6 +13,7 @@ class Actor: public GraphObject {
         bool isAlive();
         void setAlive(bool isAlive);
         virtual void doSomething() = 0;
+        virtual bool isSquare();
     private:
         StudentWorld* m_world;
         bool m_alive;
@@ -66,6 +67,8 @@ class Avatar: public Character {
         void setOverlapped(bool overlapped);
         void changeDir(bool status);
         void swapPlayer(Avatar* avatar);
+        void swapCoins(Avatar* avatar);
+        void swapStars(Avatar* avatar);
         Vortex* getVortex();
         void giveVortex();
     private:
@@ -122,6 +125,7 @@ class Square: public Actor {
         bool avatarLanded(Avatar* avatar);
         bool avatarPassed(Avatar* avatar);
         void getRandomSquare(int& newX, int& newY);
+        bool isSquare();
     private:
         bool m_active;
 };

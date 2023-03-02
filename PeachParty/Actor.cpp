@@ -17,6 +17,9 @@ bool Actor::isAlive(){
 void Actor::setAlive(bool isAlive){
     m_alive = isAlive;
 }
+bool Actor::isSquare(){
+    return false;
+}
 
 //======== CHARACTER CLASS (PARENT: ACTOR CLASS) ========
 Character::Character(StudentWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY, 0){
@@ -248,6 +251,16 @@ void Avatar::setOverlapped(bool overlapped){
 void Avatar::changeDir(bool status){
     m_changedDir = status;
 }
+void Avatar::swapCoins(Avatar *avatar){
+    int tempCoins = getCoins();
+    addCoins(avatar->getCoins() - tempCoins);
+    avatar->addCoins(tempCoins - avatar->getCoins());
+}
+void Avatar::swapStars(Avatar *avatar){
+    int tempStars = getStars();
+    addStars(avatar->getStars() - tempStars);
+    avatar->addStars(tempStars - avatar->getStars());
+}
 void Avatar::swapPlayer(Avatar *avatar){
     //swap x and y coordinates
     int tempX = getX();
@@ -356,13 +369,17 @@ void Bowser::doSomething(){
     }
     else{
         startWalking();
+        //when bowser just stops walking
         if(getTicks() == 0){
-//            std::cout << "BOWSER JUST STOPPED WALKING" << std::endl;
             setWalkStatus(false);
             setPauseCounter(180);
-            //implement below as 25% chance
-//            getWorld()->replaceSquare(getX(), getY());
-            getWorld()->playSound(SOUND_DROPPING_SQUARE_CREATED);
+            //25% chance of dropping square
+            int rand = randInt(0,4);
+            if(rand == 0){
+                getWorld()->replaceSquare(getX(), getY());
+                getWorld()->playSound(SOUND_DROPPING_SQUARE_CREATED);
+            }
+            
         }
     }
 }
@@ -372,10 +389,41 @@ Boo::Boo(StudentWorld* world, int imageID, double startX, double startY) : Monst
     
 }
 void Boo::doSomething(){
-//    getWorld()->playSound(SOUND_BOO_ACTIVATE);
+    if(!isWalking()){
+        checkOverlap(getWorld()->getPeach());
+        checkOverlap(getWorld()->getYoshi());
+        setPauseCounter(getPauseCounter() - 1);
+        if(getPauseCounter() == 0){
+            handleZeroPaused();
+        }
+    }
+    else{
+        startWalking();
+        if(getTicks() == 0){
+            setWalkStatus(false);
+            setPauseCounter(180);
+        }
+    }
 }
 void Boo::executeOverlap(Avatar* avatar){
-    
+    int rand = randInt(1,2);
+    switch (rand){
+        case 1: {
+            if(avatar == getWorld()->getPeach())
+                avatar->swapCoins(getWorld()->getYoshi());
+            else
+                avatar->swapCoins(getWorld()->getPeach());
+            break;
+        }
+        case 2: {
+            if(avatar == getWorld()->getPeach())
+                avatar->swapStars(getWorld()->getYoshi());
+            else
+                avatar->swapStars(getWorld()->getPeach());
+            break;
+        }
+    }
+    getWorld()->playSound(SOUND_BOO_ACTIVATE);
 }
 
 //======== SQUARE CLASS (PARENT: ACTOR CLASS) ========
@@ -395,6 +443,9 @@ void Square::getRandomSquare(int& newX, int& newY){
         newY = randInt(1, BOARD_HEIGHT);
     }
     while(bd->getContentsOf(newX, newY) == Board::empty);
+}
+bool Square::isSquare(){
+    return true;
 }
 
 //======== COIN_SQUARE CLASS (PARENT: SQUARE CLASS) ========
@@ -499,7 +550,7 @@ void EventSquare::landAvatar(Avatar *avatar){
         int option = randInt(1,3);
         switch(option){
             case 1: {
-//                std::cout << "MOVE TO RANDOM SQUARE" << std::endl;
+                std::cout << "MOVE TO RANDOM SQUARE" << std::endl;
                 int x = -1;
                 int y = -1;
                 getRandomSquare(x,y);
@@ -508,7 +559,7 @@ void EventSquare::landAvatar(Avatar *avatar){
                 break;
             }
             case 2: {
-//                std::cout << "SWAP PLAYERS" << std::endl;
+                std::cout << "SWAP PLAYERS" << std::endl;
                 if(avatar == getWorld()->getPeach())
                     avatar->swapPlayer(getWorld()->getYoshi());
                 else
@@ -517,7 +568,7 @@ void EventSquare::landAvatar(Avatar *avatar){
                 break;
             }
             default: {
-//                std::cout << "GIVE VORTEX" << std::endl;
+                std::cout << "GIVE VORTEX" << std::endl;
                 if(avatar->getVortex() == nullptr)
                     avatar->giveVortex();
             }
