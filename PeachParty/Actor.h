@@ -8,26 +8,31 @@ class StudentWorld;
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 class Actor: public GraphObject {
     public:
-        Actor(StudentWorld* world, int imageID, double startX, double startY, int depth);
+        Actor(StudentWorld* world, int imageID, double startX, double startY, int depth, bool impact);
         StudentWorld* getWorld();
         bool isAlive();
         void setAlive(bool isAlive);
         virtual void doSomething() = 0;
         virtual bool isSquare();
+        bool canBeImpacted();
+        virtual void onImpact();
     private:
         StudentWorld* m_world;
         bool m_alive;
+        bool m_impact;
 };
 
 class Vortex: public Actor {
     public:
+        Vortex(StudentWorld* world, int imageID, double startX, double startY, int dir);
         virtual void doSomething();
-    
+    private:
+        int fire_dir;
 };
 
 class Character: public Actor{
     public:
-        Character(StudentWorld* world, int imageID, double startX, double startY);
+        Character(StudentWorld* world, int imageID, double startX, double startY, bool impact);
         virtual void doSomething() = 0;
         void findNewDir();
         void moveForward(int dir);
@@ -44,6 +49,7 @@ class Character: public Actor{
         int getTicks();
         void setFork(bool isFork);
         bool getFork();
+        void teleport();
     private:
         int m_dir;
         bool m_walking;
@@ -58,6 +64,7 @@ class Avatar: public Character {
         virtual void doSomething();
         void addCoins(int coins);
         void addStars(int stars);
+        void setRolls(int rolls);
         int getCoins();
         int getRolls();
         int getStars();
@@ -70,7 +77,9 @@ class Avatar: public Character {
         void swapCoins(Avatar* avatar);
         void swapStars(Avatar* avatar);
         Vortex* getVortex();
-        void giveVortex();
+        void fireVortex();
+        bool hasVortex();
+        void setVortex(bool vortex);
     private:
         int m_id;
         int m_coins;
@@ -79,6 +88,7 @@ class Avatar: public Character {
         bool m_new;
         bool m_overlapped;
         bool m_changedDir;
+        bool has_vortex;
         Vortex* m_vortex;
 };
 
@@ -94,6 +104,7 @@ class Monster: public Character{
         void setPauseCounter(int count);
         void checkOverlap(Avatar* avatar);
         virtual void executeOverlap(Avatar* avatar) = 0;
+        virtual void onImpact();
     private:
         int m_pauseCounter;
         int m_squares;

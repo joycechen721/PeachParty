@@ -24,7 +24,9 @@ class StudentWorld : public GameWorld
         int getBankAmt();
         void addToBank(int amt);
         void replaceSquare(int x, int y);
-
+        void addVortex(int x, int y, int dir);
+        void checkVortexOverlap(Vortex* v, int x, int y);
+        bool isOverlapping(int x1, int y1, int x2, int y2);
     private:
         Board m_bd;
         int m_bank;

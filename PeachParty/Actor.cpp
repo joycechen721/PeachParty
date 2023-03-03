@@ -4,9 +4,11 @@
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 
 //======== ACTOR CLASS (PARENT: GRAPHOBJECT CLASS) ========
-Actor::Actor(StudentWorld* world, int imageID, double startX, double startY, int depth) : GraphObject(imageID, startX, startY, right, depth, 1.0){
+Actor::Actor(StudentWorld* world, int imageID, double startX, double startY, int depth, bool impact) : GraphObject(imageID, startX, startY, right, depth, 1.0){
     m_world = world;
     m_alive = true;
+    setDirection(0);
+    m_impact = impact;
 }
 StudentWorld* Actor::getWorld(){
     return m_world;
@@ -20,9 +22,13 @@ void Actor::setAlive(bool isAlive){
 bool Actor::isSquare(){
     return false;
 }
+bool Actor::canBeImpacted(){
+    return m_impact;
+}
+void Actor::onImpact(){}
 
 //======== CHARACTER CLASS (PARENT: ACTOR CLASS) ========
-Character::Character(StudentWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY, 0){
+Character::Character(StudentWorld* world, int imageID, double startX, double startY, bool impact) : Actor(world, imageID, startX, startY, 0, impact){
     m_dir = right;
     m_walking = false;
     m_fork = false;
@@ -156,9 +162,20 @@ void Character::setFork(bool isFork){
 bool Character::getFork(){
     return m_fork;
 }
+void Character::teleport(){
+    Board* bd = getWorld()->getBoard();
+    int x = -1;
+    int y = -1;
+    do{
+        x = randInt(1, BOARD_WIDTH);
+        y = randInt(1, BOARD_HEIGHT);
+    }
+    while(bd->getContentsOf(x, y) == Board::empty);
+    moveTo(SPRITE_WIDTH * x, SPRITE_HEIGHT * y);
+}
 
 //======== AVATAR CLASS (PARENT: CHARACTER CLASS) ========
-Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY) : Character(world, imageID, startX, startY){
+Avatar::Avatar(StudentWorld* world, int imageID, int playerID, double startX, double startY) : Character(world, imageID, startX, startY, false){
     m_id = playerID;
     m_dieRoll = 0;
     m_coins = 0;
@@ -175,8 +192,26 @@ void Avatar::doSomething(){
             setTicks(m_dieRoll * 8);
             setWalkStatus(true);
         }
-        else if(action == ACTION_FIRE){
+        else if(action == ACTION_FIRE && hasVortex()){
+            int x = getX();
+            int y = getY();
+            switch(getWalkDir()){
+                case up:
+                    y = getY() + SPRITE_HEIGHT;
+                    break;
+                case down:
+                    y = getY() - SPRITE_HEIGHT;
+                    break;
+                case right:
+                    x = getX() + SPRITE_WIDTH;
+                    break;
+                case left:
+                    x = getX() - SPRITE_WIDTH;
+                    break;
+            }
+            getWorld()->addVortex(x, y, getWalkDir());
             getWorld()->playSound(SOUND_PLAYER_FIRE);
+            setVortex(false);
         }
         else{
             return;
@@ -220,6 +255,9 @@ void Avatar::addStars(int stars){
     m_stars += stars;
     if(m_stars < 0) m_stars = 0;
 }
+void Avatar::setRolls(int rolls){
+    m_dieRoll = rolls;
+}
 int Avatar::getCoins(){
     return m_coins;
 }
@@ -232,9 +270,11 @@ int Avatar::getStars(){
 Vortex* Avatar::getVortex(){
     return m_vortex;
 }
-void Avatar::giveVortex(){
-//    m_vortex = new Vortex();
-    getWorld()->playSound(SOUND_GIVE_VORTEX);
+bool Avatar::hasVortex(){
+    return has_vortex;
+}
+void Avatar::setVortex(bool vortex){
+    has_vortex = vortex;
 }
 bool Avatar::isNew(){
     return m_new;
@@ -268,10 +308,13 @@ void Avatar::swapPlayer(Avatar *avatar){
     moveTo(avatar->getX(), avatar->getY());
     avatar->moveTo(tempX, tempY);
     
-    //swap number of ticks left
+    //swap number of ticks & dice rolls left
     int tempTicks = getTicks();
     setTicks(avatar->getTicks());
     avatar->setTicks(tempTicks);
+    int tempRolls = getRolls();
+    setRolls(avatar->getRolls());
+    avatar->setRolls(tempRolls);
     
     //swap walk direction
     int tempDir = getWalkDir();
@@ -289,13 +332,33 @@ void Avatar::swapPlayer(Avatar *avatar){
     avatar->setWalkStatus(tempStatus);
 }
 
-//======== VORTEX CLASS (PARENT: ACTOR CLASS) ========
+//======== VORTEX CLASS (PARENT: CHARACTER CLASS) ========
+Vortex::Vortex(StudentWorld* world, int imageID, double startX, double startY, int dir) : Actor(world, imageID, startX, startY, 0, false){
+    fire_dir = dir;
+}
 void Vortex::doSomething(){
-//    getWorld()->playSound(SOUND_HIT_BY_VORTEX);
+    if(!isAlive()) return;
+    switch(fire_dir){
+        case right:
+            moveTo(getX() + 2, getY());
+            break;
+        case left:
+            moveTo(getX() - 2, getY());
+            break;
+        case up:
+            moveTo(getX(), getY() + 2);
+            break;
+        case down:
+            moveTo(getX(), getY() - 2);
+    }
+    if(getX() < 0 || getX() >= VIEW_WIDTH || getY() < 0 || getY() >= VIEW_HEIGHT){
+        setAlive(false);
+    }
+    getWorld()->checkVortexOverlap(this, getX(), getY());
 }
 
 //======== MONSTER CLASS (PARENT: CHARACTER CLASS) ========
-Monster::Monster(StudentWorld* world, int imageID, double startX, double startY) : Character(world, imageID, startX, startY){
+Monster::Monster(StudentWorld* world, int imageID, double startX, double startY) : Character(world, imageID, startX, startY, true){
     m_pauseCounter = 180;
     m_squares = 0;
 }
@@ -345,6 +408,13 @@ void Monster::checkOverlap(Avatar* avatar){
         avatar->setOverlapped(false);
     }
 }
+void Monster::onImpact(){
+    teleport();
+    setDirection(0);
+    setWalkDir(right);
+    setWalkStatus(false);
+    setPauseCounter(180);
+}
 
 //======== BOWSER CLASS (PARENT: MONSTER CLASS) ========
 Bowser::Bowser(StudentWorld* world, int imageID, double startX, double startY) : Monster(world, imageID, startX, startY){
@@ -376,6 +446,7 @@ void Bowser::doSomething(){
             //25% chance of dropping square
             int rand = randInt(0,4);
             if(rand == 0){
+                std::cout << "BOWSER DROPPED SQUARE" << std::endl;
                 getWorld()->replaceSquare(getX(), getY());
                 getWorld()->playSound(SOUND_DROPPING_SQUARE_CREATED);
             }
@@ -427,7 +498,7 @@ void Boo::executeOverlap(Avatar* avatar){
 }
 
 //======== SQUARE CLASS (PARENT: ACTOR CLASS) ========
-Square::Square(StudentWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY, 1){
+Square::Square(StudentWorld* world, int imageID, double startX, double startY) : Actor(world, imageID, startX, startY, 1, false){
     m_active = true;
 }
 bool Square::avatarLanded(Avatar* avatar){
@@ -435,14 +506,6 @@ bool Square::avatarLanded(Avatar* avatar){
 }
 bool Square::avatarPassed(Avatar* avatar){
     return avatar->isWalking() && getX() == avatar->getX() && getY() == avatar->getY();
-}
-void Square::getRandomSquare(int& newX, int& newY){
-    Board* bd = getWorld()->getBoard();
-    do{
-        newX = randInt(1, BOARD_WIDTH);
-        newY = randInt(1, BOARD_HEIGHT);
-    }
-    while(bd->getContentsOf(newX, newY) == Board::empty);
 }
 bool Square::isSquare(){
     return true;
@@ -551,10 +614,7 @@ void EventSquare::landAvatar(Avatar *avatar){
         switch(option){
             case 1: {
                 std::cout << "MOVE TO RANDOM SQUARE" << std::endl;
-                int x = -1;
-                int y = -1;
-                getRandomSquare(x,y);
-                avatar->moveTo(SPRITE_WIDTH * x, SPRITE_HEIGHT * y);
+                avatar->teleport();
                 getWorld()->playSound(SOUND_PLAYER_TELEPORT);
                 break;
             }
@@ -569,8 +629,10 @@ void EventSquare::landAvatar(Avatar *avatar){
             }
             default: {
                 std::cout << "GIVE VORTEX" << std::endl;
-                if(avatar->getVortex() == nullptr)
-                    avatar->giveVortex();
+                if(!avatar->hasVortex()){
+                    avatar->setVortex(true);
+                    getWorld()->playSound(SOUND_GIVE_VORTEX);
+                }
             }
         }
         avatar->setNew(false);
