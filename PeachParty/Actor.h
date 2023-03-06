@@ -39,7 +39,8 @@ class Character: public Actor{
         void setMoveDirection(int dir);
         bool canMoveForward(int dir);
         bool checkUserAction(int playerID);
-        bool isFork();
+        void teleport();
+        
         //getters and setters
         void setWalkDir(int dir);
         int getWalkDir();
@@ -47,9 +48,10 @@ class Character: public Actor{
         bool isWalking();
         void setTicks(int ticks);
         int getTicks();
+        bool isFork();
         void setFork(bool isFork);
         bool getFork();
-        void teleport();
+    
     private:
         int m_dir;
         bool m_walking;

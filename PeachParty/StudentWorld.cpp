@@ -17,7 +17,7 @@ StudentWorld::StudentWorld(string assetPath)
 
 int StudentWorld::init()
 {
-    startCountdownTimer(100);
+    startCountdownTimer(99);
     m_bank = 0;
     int boardNum = getBoardNumber();
     string board_file = assetPath() + "board0" + std::to_string(boardNum) + ".txt";
@@ -83,15 +83,25 @@ int StudentWorld::move()
     // Notice that the return value GWSTATUS_NOT_IMPLEMENTED will cause our framework to end the game.
     if (timeRemaining() <= 0){
         playSound(SOUND_GAME_FINISHED);
-        if(m_yoshi->getCoins() + m_yoshi->getStars() > m_peach->getCoins() + m_yoshi->getStars()){
+        //winner checks
+        if(m_yoshi->getStars() > m_peach->getStars()){
             setFinalScore(m_yoshi->getStars(), m_yoshi->getCoins());
             return GWSTATUS_YOSHI_WON;
         }
-        else if(m_yoshi->getCoins() + m_yoshi->getStars() < m_peach->getCoins() + m_yoshi->getStars()){
+        else if(m_yoshi->getStars() < m_peach->getStars()){
             setFinalScore(m_peach->getStars(), m_peach->getCoins());
             return GWSTATUS_PEACH_WON;
         }
         else{
+            if(m_yoshi->getCoins() > m_peach->getCoins()){
+                setFinalScore(m_yoshi->getStars(), m_yoshi->getCoins());
+                return GWSTATUS_YOSHI_WON;
+            }
+            if(m_yoshi->getCoins() < m_peach->getCoins()){
+                setFinalScore(m_peach->getStars(), m_peach->getCoins());
+                return GWSTATUS_PEACH_WON;
+            }
+            //choose random winner if stars/coins are equal
             int winner = randInt(1,2);
             if(winner == 1){
                 setFinalScore(m_peach->getStars(), m_peach->getCoins());
@@ -101,7 +111,7 @@ int StudentWorld::move()
             return GWSTATUS_YOSHI_WON;
         }
     }
-    
+    //delete any dead actors (vortexes, squares)
     vector<Actor*>::iterator it = m_actors.begin();
     while(it != m_actors.end()){
         if((*it)->isAlive()){
@@ -180,9 +190,6 @@ Avatar* StudentWorld::getYoshi(){
     return m_yoshi;
 }
 
-//std::vector<Actor*>::iterator StudentWorld::getActors(){
-//    return m_actors.begin();
-//}
 
 int StudentWorld::getBankAmt(){
     return m_bank;
@@ -194,12 +201,12 @@ void StudentWorld::addToBank(int amt){
 
 void StudentWorld::replaceSquare(int x, int y){
     vector<Actor*>::iterator it = m_actors.begin();
+    //check for square underneath bowser
     while((*it)->getX() != x || (*it)->getY() != y || !(*it)->isSquare()){
         it++;
     }
-//    std::cout << "REPLACED SQUARE X: " << (*it)->getX() << " Y: " << (*it)->getY() << std::endl;
-    delete *it;
-    *it = new DroppingSquare(this, IID_DROPPING_SQUARE, x, y);
+    delete *it; //delete the square underneath bowser
+    *it = new DroppingSquare(this, IID_DROPPING_SQUARE, x, y); //create a dropping square on the board
 }
 
 void StudentWorld::checkVortexOverlap(Vortex* v, int x, int y){
@@ -217,17 +224,20 @@ void StudentWorld::checkVortexOverlap(Vortex* v, int x, int y){
     }
 }
 
+//checks if vortex is overlapping with a baddie
 bool StudentWorld::isOverlapping(int x1, int y1, int x2, int y2){
     if(x1 == x2 && y1 == y2) return true;
+    //if vortex's x coordinate is smaller
     if(x1 < x2 && x1 + 15 > x2){
+        //if vortex's y coordinate is smaller
         if(y1 < y2 && y1 + 15 > y2) return true;
+        //if vortex's y coordinate is greater
         if(y2 < y1 && y2 + 15 > y1) return true;
     }
+    //if vortex's x coordinate is greater
     else if(x2 < x1 && x2 + 15 > x1){
         if(y1 < y2 && y1 + 15 > y2) return true;
         if(y2 < y1 && y2 + 15 > y1) return true;
     }
     return false;
 }
-
-//if(((x1 < x2 && x1 + 15 > x2) || (x2 < x1 && x2 + 15 > x1)) && ((y1 < y2 && y1 + 15 > y2) || (y2 < y1 && y2 + 15 > y1))) return true;
